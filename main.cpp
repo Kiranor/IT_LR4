@@ -29,7 +29,7 @@ void task_2() {
 
     for (int j = 0; j < 5; ++j) {
         count = 0;
-        cout << num_threads[j] << endl;
+        //cout << num_threads[j] << endl;
         auto start = chrono::system_clock::now();
         #pragma parallel num_threads(num_threads[j])
             #pragma omp for schedule(static)
@@ -39,10 +39,11 @@ void task_2() {
         chrono::duration<double> elapsed = end - start;
 
         time[0][j] = elapsed.count();
+        //cout << count << endl;
     }
     for (int j = 0; j < 5; ++j) {
         count = 0;
-        cout << num_threads[j] << endl;
+        //cout << num_threads[j] << endl;
         auto start = chrono::system_clock::now();
         #pragma parallel num_threads(num_threads[j])
             #pragma omp for schedule(dynamic)
@@ -52,11 +53,12 @@ void task_2() {
         chrono::duration<double> elapsed = end - start;
 
         time[1][j] = elapsed.count();
+        //cout << count << endl;
     }
 
     for (int j = 0; j < 5; ++j) {
         count = 0;
-        cout << num_threads[j] << endl;
+        //cout << num_threads[j] << endl;
         auto start = chrono::system_clock::now();
         #pragma parallel num_threads(num_threads[j])
             #pragma omp for schedule(static)
@@ -66,10 +68,11 @@ void task_2() {
         chrono::duration<double> elapsed = end - start;
 
         time[2][j] = elapsed.count();
+        //cout << count << endl;
     }
     for (int j = 0; j < 5; ++j) {
         count = 0;
-        cout << num_threads[j] << endl;
+        //cout << num_threads[j] << endl;
         auto start = chrono::system_clock::now();
         #pragma parallel num_threads(num_threads[j])
             #pragma omp for schedule(dynamic)
@@ -79,6 +82,7 @@ void task_2() {
         chrono::duration<double> elapsed = end - start;
 
         time[3][j] = elapsed.count();
+        //cout << count << endl;
     }
 
     for (int i = 0; i < 4; ++i) {
