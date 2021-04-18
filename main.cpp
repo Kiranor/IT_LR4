@@ -2,6 +2,8 @@
 #include <chrono>
 #include <cmath>
 #include <vector>
+#include <omp.h>
+#include <list>
 
 using namespace std;
 
@@ -15,12 +17,13 @@ int Prime (unsigned long a) {
     return i * i > a;
 }
 
-void PrimeCount (double (&time), int num_threads, int maximum, char mode) {
+double PrimeCount (int num_threads, int maximum, char mode) {
 
+    double time = 0;
     int count = 0;
     switch (mode) {
         case 's': {
-            auto start = chrono::system_clock::now();
+            auto start = omp_get_wtime();
 #pragma omp parallel num_threads(num_threads)
             {
 #pragma omp for schedule(static)
@@ -30,13 +33,12 @@ void PrimeCount (double (&time), int num_threads, int maximum, char mode) {
                 }
 #pragma omp barier
             }
-            auto end = chrono::system_clock::now();
-            chrono::duration<double> elapsed = end - start;
-            time = elapsed.count();
+            auto end = omp_get_wtime();
+            time = end - start;
             break;
         }
         case 'd': {
-            auto start = chrono::system_clock::now();
+            auto start = omp_get_wtime();
 #pragma omp parallel num_threads(num_threads)
             {
 #pragma omp for schedule(dynamic)
@@ -46,51 +48,52 @@ void PrimeCount (double (&time), int num_threads, int maximum, char mode) {
                 }
 #pragma omp barier
             }
-            auto end = chrono::system_clock::now();
-            chrono::duration<double> elapsed = end - start;
-            time = elapsed.count();
+            auto end = omp_get_wtime();
+            time = end - start;
             break;
         }
     }
+    return time;
 }
 
 void task_1 () {
 #pragma omp parallel num_threads(5)
     cout << "Hello, World!" << endl;
 }
-//TODO Починить подсчет времени
+
 void task_2(){
 
     vector< vector <double> > time(4, vector<double> (5));
-    int N[2] = {1000000, 10000000};
-
-    for (int i = 1; i <= 32; i *= 2) {
-        int t = 0;
-        int k = 0;
-        if (i == 8) continue;
-        for (int j = 0; j < 4; ++j) {
-            if (j == 0 or j == 2)
-                if(j == 0) k = 0;
-                else k = 1;
-            PrimeCount(time[j][t], i, N[k], 's');
-            if (j == 1 or j == 3)
-                if(j == 1) k = 0;
-                else k = 1;
-                PrimeCount(time[j][t], i, N[k], 'd');
-        t++;
+    int N[4] = {1000000, 1000000, 10000000, 10000000};
+    int row = 0;
+    for (int numThreads = 1; numThreads <= 32; numThreads *= 2) {
+        if (numThreads == 8) continue;
+        for (int line = 0; line < 4; ++line) {
+            if (line == 0 or line == 2) {
+                //cout << PrimeCount(numThreads, N[line], 's') << endl;
+                time[line][row] = round(PrimeCount(numThreads, N[line], 's') * 1000) / 1000;
+            }
+            if (line == 1 or line == 3) {
+                //cout << PrimeCount(numThreads, N[line], 'd') << endl;
+                time[line][row] = round(PrimeCount(numThreads, N[line], 'd') * 1000) / 1000;
+            }
+            //cout << time[line][row] << endl;
         }
+        row++;
     }
 
     for (int i = 0; i < 4; ++i) {
+        if (i == 0 or i == 2) cout << "Time for N = " << N[i] << endl;
         if (i % 2 == 0) cout << "          1     2     4    16    32\n";
         for (int j = 0; j < 5; ++j) {
             if ((j == 0) and (i % 2 == 0)) cout << "Static  ";
             if ((j == 0) and (i % 2 != 0)) cout << "Dynamic ";
-
-            cout << round(time[i][j] * 1000) / 1000 << ' ';
+            cout << time[i][j] << ' ';
         }
         cout << endl;
+        if (i == 1) cout << endl;
     }
+
 }
 
 //TODO Сделать 3 задание
@@ -103,8 +106,7 @@ void task_3 () {
 int main () {
 
     //task_1();
-    task_2();
-    //cout << time[0][0];
+    //task_2();
     return 0;
 
 }
