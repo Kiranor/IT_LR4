@@ -4,6 +4,7 @@
 #include <vector>
 #include <omp.h>
 #include <list>
+#include <random>
 
 using namespace std;
 
@@ -97,16 +98,44 @@ void task_2(){
 }
 
 //TODO Сделать 3 задание
-void task_3 () {
+auto task_3 (int length, int magicNumber, int numThreads) {
 
+    int N[length];
+    int iterations[numThreads];
+    bool found = false;
+
+    for (int i = 0; i < numThreads; ++i) iterations[numThreads] = 0;
+    for (int i = 0; i < length; ++i) N[i] = rand() % length + 1;
+
+#pragma omp parallel shared(found) num_threads(numThreads)
+    {
+#pragma omp for schedule(static)
+        for (int i = 0; i < 5; ++i) {
+            iterations[omp_get_thread_num()]++;
+#pragma omp critical
+            {
+                if (found == true) ;
+                if (N[i] == magicNumber) {
+                    found = true;
+                }
+            }
+        }
+    }
+    return iterations;
 
 }
+
+
+
+
 
 
 int main () {
 
     //task_1();
     //task_2();
+    //task_3(10, 2, 5);
+
     return 0;
 
 }
