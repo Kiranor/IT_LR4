@@ -1,10 +1,9 @@
 #include <iostream>
-#include <chrono>
 #include <cmath>
-#include <vector>
 #include <omp.h>
-#include <list>
 #include <random>
+#include <stdlib.h>
+
 
 using namespace std;
 
@@ -98,30 +97,35 @@ void task_2(){
 }
 
 //TODO Сделать 3 задание
-auto task_3 (int length, int magicNumber, int numThreads) {
+void task_3 (int length, int magicNumber, int numThreads) {
 
+    //OMP_CANCELLATION = true;
     int N[length];
     int iterations[numThreads];
     bool found = false;
 
-    for (int i = 0; i < numThreads; ++i) iterations[numThreads] = 0;
+    for (int i = 0; i < numThreads; ++i) iterations[i] = 0;
     for (int i = 0; i < length; ++i) N[i] = rand() % length + 1;
-
-#pragma omp parallel shared(found) num_threads(numThreads)
+    //auto start = omp_get_wtime();
+#pragma omp parallel shared(found, iterations) num_threads(numThreads)
     {
-#pragma omp for schedule(static)
-        for (int i = 0; i < 5; ++i) {
+#pragma omp for schedule(auto)
+        for (int i = 0; i < length; ++i) {
             iterations[omp_get_thread_num()]++;
 #pragma omp critical
             {
-                if (found == true) ;
+                if (found == true) {
+                    //#pragma omp cancel for
+                }
                 if (N[i] == magicNumber) {
                     found = true;
                 }
             }
         }
     }
-    return iterations;
+    //auto end = omp_get_wtime();
+    //cout << end - start;
+    for (const auto &item : iterations) cout << item << endl;
 
 }
 
@@ -132,9 +136,13 @@ auto task_3 (int length, int magicNumber, int numThreads) {
 
 int main () {
 
-    //task_1();
-    //task_2();
-    //task_3(10, 2, 5);
+    cout << "========================================" << endl;
+    task_1();
+    cout << "========================================" << endl;
+    task_2();
+    cout << "========================================" << endl;
+    //cout << omp_get_cancellation();
+    //task_3(100, 2, 3);
 
     return 0;
 
