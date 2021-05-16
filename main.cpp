@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <random>
 #include <stdlib.h>
+#include <processenv.h>
 
 
 using namespace std;
@@ -63,10 +64,10 @@ void task_1 () {
 
 void task_2(){
 
-    vector< vector <double> > time(4, vector<double> (5));
+    vector< vector <double> > time(4, vector<double> (7));
     int N[4] = {1000000, 1000000, 10000000, 10000000};
     int row = 0;
-    for (int numThreads = 1; numThreads <= 32; numThreads *= 2) {
+    for (int numThreads = 1; numThreads <= 128; numThreads *= 2) {
         if (numThreads == 8) continue;
         for (int line = 0; line < 4; ++line) {
             if (line == 0 or line == 2) {
@@ -84,8 +85,8 @@ void task_2(){
 
     for (int i = 0; i < 4; ++i) {
         if (i == 0 or i == 2) cout << "Time for N = " << N[i] << endl;
-        if (i % 2 == 0) cout << "          1     2     4    16    32\n";
-        for (int j = 0; j < 5; ++j) {
+        if (i % 2 == 0) cout << "          1     2     4    16    32    64    128\n";
+        for (int j = 0; j < 7; ++j) {
             if ((j == 0) and (i % 2 == 0)) cout << "Static  ";
             if ((j == 0) and (i % 2 != 0)) cout << "Dynamic ";
             cout << time[i][j] << ' ';
@@ -136,12 +137,15 @@ void task_3 (int length, int magicNumber, int numThreads) {
 
 int main () {
 
+
+    putenv("OMP_CANCELLATION=1");
+
+    //cout << omp_get_cancellation() << endl;
     cout << "========================================" << endl;
-    task_1();
+    //task_1();
     cout << "========================================" << endl;
     task_2();
     cout << "========================================" << endl;
-    //cout << omp_get_cancellation();
     //task_3(100, 2, 3);
 
     return 0;
