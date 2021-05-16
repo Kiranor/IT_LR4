@@ -3,7 +3,7 @@
 #include <omp.h>
 #include <random>
 #include <stdlib.h>
-#include <processenv.h>
+#include <ctime>
 
 
 using namespace std;
@@ -20,11 +20,13 @@ int Prime (unsigned long a) {
 
 double PrimeCount (int num_threads, int maximum, char mode) {
 
-    double time = 0;
+    double time;
     int count = 0;
+    //omp_set_num_threads(num_threads);
     switch (mode) {
         case 's': {
-            auto start = omp_get_wtime();
+            //auto start = omp_get_wtime();
+            auto start = clock();
 #pragma omp parallel num_threads(num_threads)
             {
 #pragma omp for schedule(static)
@@ -32,29 +34,32 @@ double PrimeCount (int num_threads, int maximum, char mode) {
                     if (Prime(i) == 1)
                         count++;
                 }
-#pragma omp barier
+//#pragma omp barier
             }
-            auto end = omp_get_wtime();
+            //auto end = omp_get_wtime();
+            auto end = clock();
             time = end - start;
             break;
         }
         case 'd': {
-            auto start = omp_get_wtime();
+            //auto start = omp_get_wtime();
+            auto start = clock();
 #pragma omp parallel num_threads(num_threads)
             {
-#pragma omp for schedule(dynamic)
+#pragma omp for schedule(dynamic, 10000)
                 for (int i = 0; i < maximum; ++i) {
                     if (Prime(i) == 1)
                         count++;
                 }
-#pragma omp barier
+//#pragma omp barier
             }
-            auto end = omp_get_wtime();
+            //auto end = omp_get_wtime();
+            auto end = clock();
             time = end - start;
             break;
         }
     }
-    return time;
+    return time / CLOCKS_PER_SEC;
 }
 
 void task_1 () {
@@ -64,10 +69,10 @@ void task_1 () {
 
 void task_2(){
 
-    vector< vector <double> > time(4, vector<double> (7));
+    vector<vector <double> > time(4, vector<double> (5));
     int N[4] = {1000000, 1000000, 10000000, 10000000};
     int row = 0;
-    for (int numThreads = 1; numThreads <= 128; numThreads *= 2) {
+    for (int numThreads = 1; numThreads <= 32; numThreads *= 2) {
         if (numThreads == 8) continue;
         for (int line = 0; line < 4; ++line) {
             if (line == 0 or line == 2) {
@@ -85,8 +90,8 @@ void task_2(){
 
     for (int i = 0; i < 4; ++i) {
         if (i == 0 or i == 2) cout << "Time for N = " << N[i] << endl;
-        if (i % 2 == 0) cout << "          1     2     4    16    32    64    128\n";
-        for (int j = 0; j < 7; ++j) {
+        if (i % 2 == 0) cout << "          1     2     4    16    32\n";
+        for (int j = 0; j < 5; ++j) {
             if ((j == 0) and (i % 2 == 0)) cout << "Static  ";
             if ((j == 0) and (i % 2 != 0)) cout << "Dynamic ";
             cout << time[i][j] << ' ';
@@ -102,52 +107,79 @@ void task_3 (int length, int magicNumber, int numThreads) {
 
     //OMP_CANCELLATION = true;
     int N[length];
-    int iterations[numThreads];
+    int iterations[numThreads];// = new int[numThreads];
     bool found = false;
 
     for (int i = 0; i < numThreads; ++i) iterations[i] = 0;
+
+    srand(time(NULL));
     for (int i = 0; i < length; ++i) N[i] = rand() % length + 1;
+    cout << "Array:" << endl;
+    for (const auto &item : N) cout << item << ' ';
+    cout << endl;
+
     //auto start = omp_get_wtime();
-#pragma omp parallel shared(found, iterations) num_threads(numThreads)
+#pragma omp parallel num_threads(numThreads) shared(iterations)
     {
-#pragma omp for schedule(auto)
-        for (int i = 0; i < length; ++i) {
-            iterations[omp_get_thread_num()]++;
+        int i = 0;
+        int threadNumber = omp_get_thread_num();
+#pragma omp barrier
+        while(i < length)
+        {
+            iterations[threadNumber]++;
+            if (N[i] == magicNumber){
+                found = true;
+                break;
+            }
+            else i++;
+        }
+    }
+    if (found) {
+        cout << "Iterations per thread:" << endl;
+        for (const auto item : iterations) cout << item << " ";
+        cout << endl;
+    }
+    else cout << "Magic number not found." << endl;
+/*#pragma omp parallel /*shared(found, iterations) num_threads(numThreads)
+    {
+#pragma omp for schedule(static)
+            for (int i = 0; i < length; ++i) {
+                iterations[omp_get_thread_num()]++;
 #pragma omp critical
             {
+
                 if (found == true) {
-                    //#pragma omp cancel for
+                    //break;
+#pragma omp cancel for //lation point for
                 }
                 if (N[i] == magicNumber) {
                     found = true;
+#pragma omp cancel for //lation point for
+                    //break;
                 }
             }
         }
-    }
+    }*/
     //auto end = omp_get_wtime();
     //cout << end - start;
-    for (const auto &item : iterations) cout << item << endl;
+
 
 }
 
-
-
-
-
-
 int main () {
 
-
-    putenv("OMP_CANCELLATION=1");
-
-    //cout << omp_get_cancellation() << endl;
     cout << "========================================" << endl;
     //task_1();
     cout << "========================================" << endl;
     task_2();
     cout << "========================================" << endl;
-    //task_3(100, 2, 3);
-
+    while (true) {
+        int length, magicNumber, numTreads;
+        cout << "Input values (length magicNumber numTreads):" << endl;
+        cin >> length >> magicNumber >> numTreads;
+        cout << "Magic number = " << magicNumber << endl;
+        task_3(length, magicNumber, numTreads);
+    }
     return 0;
 
 }
