@@ -4,6 +4,7 @@
 #include <random>
 #include <stdlib.h>
 #include <ctime>
+#include <synchapi.h>
 
 
 using namespace std;
@@ -115,23 +116,36 @@ void task_3 (int length, int magicNumber, int numThreads) {
     srand(time(NULL));
     for (int i = 0; i < length; ++i) N[i] = rand() % length + 1;
     cout << "Array:" << endl;
-    for (const auto &item : N) cout << item << ' ';
+    //for (const auto &item : N) cout << item << ' ';
     cout << endl;
+
+    int part = length / numThreads;
+    cout << "Job per thread = " << part <<endl;
+    cout << "Magic number = " << magicNumber <<endl;
 
     //auto start = omp_get_wtime();
 #pragma omp parallel num_threads(numThreads) shared(iterations)
     {
         int i = 0;
         int threadNumber = omp_get_thread_num();
-#pragma omp barrier
-        while(i < length)
+        int start = threadNumber * part;
+        int end = start + part;
+        //cout << "threadNumber = " << threadNumber << endl;
+        //cout << "part = " << part <<  endl;
+        //cout << "start = " << start <<  endl;
+        //cout << "end = " << end <<  endl;
+//#pragma omp barrier
+        while(start <= end)
         {
-            iterations[threadNumber]++;
-            if (N[i] == magicNumber){
+            //Sleep(1);
+            if (found) break;
+            if (N[start] == magicNumber){
+                iterations[threadNumber]++;
                 found = true;
+                cout << "Thread "<< threadNumber << " have found magic number!" << endl;
                 break;
             }
-            else i++;
+            else {iterations[threadNumber]++; start++;}
         }
     }
     if (found) {
@@ -139,7 +153,11 @@ void task_3 (int length, int magicNumber, int numThreads) {
         for (const auto item : iterations) cout << item << " ";
         cout << endl;
     }
-    else cout << "Magic number not found." << endl;
+    else {
+        cout << "Magic number not found." << endl; cout << "Iterations per thread:" << endl;
+        for (const auto item : iterations) cout << item << " ";
+        cout << endl;
+    }
 /*#pragma omp parallel /*shared(found, iterations) num_threads(numThreads)
     {
 #pragma omp for schedule(static)
@@ -171,14 +189,15 @@ int main () {
     cout << "========================================" << endl;
     //task_1();
     cout << "========================================" << endl;
-    task_2();
+    //task_2();
     cout << "========================================" << endl;
     while (true) {
-        int length, magicNumber, numTreads;
-        cout << "Input values (length magicNumber numTreads):" << endl;
-        cin >> length >> magicNumber >> numTreads;
-        cout << "Magic number = " << magicNumber << endl;
+        int length = 20000, magicNumber = 3, numTreads = 4;
+        //cout << "Input values (length magicNumber numTreads):" << endl;
+        //cin >> length >> magicNumber >> numTreads;
+        //cout << "Magic number = " << magicNumber << endl;
         task_3(length, magicNumber, numTreads);
+        getchar();
     }
     return 0;
 
